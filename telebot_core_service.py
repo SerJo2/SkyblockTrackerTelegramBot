@@ -8,7 +8,6 @@ import asyncio
 from telebot.async_telebot import AsyncTeleBot
 from config import BotConfing
 
-import aiocron
 
 from hypixelez import HypixelClient, constants, SkyblockProfileData
 
@@ -32,7 +31,8 @@ class TelebotCoreService:
             message_thread_id = self._get_message_thread_id(message)
 
             command_handlers = {
-                "/setup": self._handle_setup_command
+                "/setup": self._handle_setup_command,
+                "/get_diff": self._handle_get_diff_command
             }
 
             clean_command = message.text.split('@')[0] if '@' in message.text else message.text
@@ -83,8 +83,7 @@ class TelebotCoreService:
                 json.dump(tg_data, f, indent=4, ensure_ascii=False)
                 f.close()
 
-    @aiocron.crontab('0 11 * * *')
-    async def send_scheduled_stats(self):
+    async def _handle_get_diff_command(self):
         print(constants.COLLECTION_KEY_VALUES)
 
         with open('db.json', 'r', encoding='utf-8') as file:
@@ -98,6 +97,12 @@ class TelebotCoreService:
                     if old_data.get_collection(key) != new_data.get_collection(key):
                         diff = new_data.get_collection(key) - old_data.get_collection(key)
                         stats += "\n" + key + ": "+ str(diff)
-
+                db_data[i]["init_data"] = new_data._data
                 await self.bot.send_message(i, stats)
+            file.close()
+
+        with open("db.json", "w", encoding="utf-8") as f:
+            json.dump(db_data, f, indent=4, ensure_ascii=False)
+            f.close()
+
 
