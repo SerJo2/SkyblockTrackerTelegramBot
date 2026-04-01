@@ -83,22 +83,22 @@ class TelebotCoreService:
                 json.dump(tg_data, f, indent=4, ensure_ascii=False)
                 f.close()
 
-    async def _handle_get_diff_command(self):
+    async def _handle_get_diff_command(self, message, message_thread_id):
         print(constants.COLLECTION_KEY_VALUES)
 
         with open('db.json', 'r', encoding='utf-8') as file:
             db_data = json.load(file)
 
-            for i in db_data:
-                stats = ""
-                new_data = self.hypixel_api_client.fetch_profile_info(db_data[i]["uuid"], db_data[i]['profile_uuid'])
-                old_data = SkyblockProfileData(db_data[i]["init_data"], db_data[i]["uuid"])
-                for key in constants.COLLECTION_KEY_VALUES:
-                    if old_data.get_collection(key) != new_data.get_collection(key):
-                        diff = new_data.get_collection(key) - old_data.get_collection(key)
-                        stats += "\n" + key + ": "+ str(diff)
-                db_data[i]["init_data"] = new_data._data
-                await self.bot.send_message(i, stats)
+            stats = ""
+            new_data = self.hypixel_api_client.fetch_profile_info(db_data[message.chat.id]["uuid"], db_data[message.chat.id]['profile_uuid'])
+            old_data = SkyblockProfileData(db_data[message.chat.id]["init_data"], db_data[message.chat.id]["uuid"])
+            for key in constants.COLLECTION_KEY_VALUES:
+                if old_data.get_collection(key) != new_data.get_collection(key):
+                    diff = new_data.get_collection(key) - old_data.get_collection(key)
+                    stats += "\n" + key + ": "+ str(diff)
+            db_data[message.chat.id]["init_data"] = new_data._data
+            await self.bot.send_message(message.chat.id, stats)
+
             file.close()
 
         with open("db.json", "w", encoding="utf-8") as f:
